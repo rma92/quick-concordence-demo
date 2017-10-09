@@ -1,0 +1,25 @@
+Concrdance notes.  Basic plan:
+
+The concordance contains a list of words.  Theoretically, the number of words in the text document will be high compared to the number of unique words -- in other words, there will be many repeat words.  
+
+The fastest data structure to hold a concordance would be a Trie, which has a lookup time that is of O(m), where m is the length of the word to be looked up, or inserted, in letters.
+
+The word storage could also be implemented using a HashTable/HashMap.  The lookup and insert time is O(1) plus however long the hash method takes, which is unlikely to be less than O(m), where m is the length of the word in letters, although it would be possible to develop a potentially esoteric hash algorithm that takes advantage of the length of a memory word in the system.
+
+Regardless of which data structure is used, the storage will function as a key value pair, where the word is the key, and the number of words plus a Linked List of integers, representing which sentance contains the word.
+
+The long document will be parsed character by character.  There will be one int that marks the begining of a word, and another that marks the current index (for loop index).  If the character at the current index is a word split character, we run a function to add the word to the concordance.  Once that is done, the int marking the beginning of the word will be set to the current index, and the
+
+
+Assumptions:
+-A sentance ends in a '.', '!', or '?'. 
+-Words are split by ' ', '\n', '\r', and '\0'.  These characters cannot appear in the word.  Other separator characters ('{', '}', '[', ']', '(', ')', '-', '—'(emdash), and '–') can also separate the words. '\0' will be considered the end of the file.
+-commas (',') and sentance terminating characters ('.', '!', '?'), that appear as the last character in the word will be stripped from the word.
+-A special case is needed to deal with acronyms that contain periods, such as i.e.  An assumption will be made that acronyms that contain a period in the middle CAN NOT be the end of a sentance.
+-Words are not case sensitive.  We will make all characters lowercase.
+-If a word has a length of 0, it will not be included in the concordance.  This would happen if there are multiple separator characters in a row (e.g. '()').
+-The sentance ending characters will not be used to separate words.  They will, however, be stripped from the word when adding the word to the table.
+
+A prototype will be developed in PHP, since it is an efficient language for string parsing, and all arrays are actually hashtables.
+
+The final code will use a trie, and will be developed in C.
