@@ -97,7 +97,7 @@ void print_trie( struct trie_node * node, char * word, int depth )
     }
   }
 }
-int main()
+int main(int argc, char **argv)
 {
   //file pointer
   FILE *ifp;
@@ -154,12 +154,22 @@ int main()
   root = (struct trie_node*) calloc( 1, sizeof( struct trie_node ) );
 
   //Open file
-  ifp = fopen( filename, "r" );
-
-  if( ifp == NULL )
+  if(argc > 1) 
   {
-    fprintf(stderr, "Can't open file.");
+    ifp = fopen( argv[1], "r" );
+
+    if( ifp == NULL )
+    {
+      fprintf(stderr, "Can't open file.");
+      return 1;
+    }
   }
+  else
+  {
+    printf("usage: c filename.txt\nGenerates a concurrence of the words in the file.\n");
+    return 1;
+  }
+  
 
   while( c != EOF )
   {
