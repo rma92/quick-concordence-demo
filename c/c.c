@@ -26,7 +26,6 @@ struct ll_node
 {
   int sentance_number;
   struct ll_node * next;
-//  struct ll_node * prev;
 };
 
 //A trie will be used to hold the word list.
@@ -166,6 +165,19 @@ int main()
           ++i;
         }while( i < word_length );
         ++( ct->counter );
+        //Add an element to the LinkedList
+        if( ct->last == NULL )
+        {
+          ct->last = calloc( 1, sizeof( struct ll_node ) );
+          ct->first = ct->last;
+        }
+        else
+        {
+          ct->last->next = calloc( 1, sizeof( struct ll_node ) );
+          ct->last = ct->last->next;
+        }
+        ct->last->sentance_number = sentance_counter;
+
         //printf("\"%.*s\"\n", word_length, word);
       }//if( word_length > 0 )
       if( queue_increase_sentance_counter == 1 )
