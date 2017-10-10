@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <malloc.h>
 
-#define MAX_WORD_LENGTH 980
+#define MAX_WORD_LENGTH 255
 #define CHARSET_SIZE 255
 
 /*
@@ -43,10 +43,8 @@ Known issues:
   tell the difference.
 */
 
-//A LinkedList Node used for storing the list of sentences that 
-//contain the word.  Doublely-Linked allows us to traverse the list
-//in reverse order -- so that the list appears in increasing order
-//without needing to be sorted.
+//A linked list Node used for storing the list of sentences that 
+//contain the word.
 struct ll_node
 {
   int sentence_number;
