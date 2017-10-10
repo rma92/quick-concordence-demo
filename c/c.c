@@ -4,7 +4,6 @@
 #define MAX_WORD_LENGTH 980
 #define CHARSET_SIZE 255
 
-//BUG: "..." at the end of a word is not stripped when counting the word.
 /*
 Discussion:
 A very fast method of creating a concordance, in close to O(n) time where 
@@ -28,6 +27,10 @@ This implementation expects an ASCII character set (up to 255 characters),
  should remain similar, aside from additional time for memory allocation
  being required.
 
+The word array is an unsigned char to prevent high ASCII characters from
+ causing a crash by attempting to access a negative array index (in the 
+ trie). 
+
 Known issues:
  An ellipsis does not count as an end of a sentence.  While an ellipsis
   does not necessarily need to be the end of a sentence, no method of
@@ -38,9 +41,7 @@ Known issues:
   it is added to the table.  This would only affect the count if the 
   abbreviation happens to match a word, and the period is required to 
   tell the difference.
-
 */
-const char * filename = "../input/war_and_peace.txt";
 
 //A LinkedList Node used for storing the list of sentences that 
 //contain the word.  Doublely-Linked allows us to traverse the list
@@ -48,7 +49,7 @@ const char * filename = "../input/war_and_peace.txt";
 //without needing to be sorted.
 struct ll_node
 {
-  int sentance_number;
+  int sentence_number;
   struct ll_node * next;
 };
 
@@ -79,10 +80,11 @@ void print_trie( struct trie_node * node, char * word, int depth )
   {
     printf("%.*s%s\t\t{%d:", depth, word,
       (depth > 7)?"":"\t", node->counter );
+
     //read the linked list
     lln = node->first;
     do{
-      printf("%s%d", (lln==node->first)?"":",", lln->sentance_number);
+      printf("%s%d", (lln==node->first)?"":",", lln->sentence_number);
       lln = lln->next;
     }while( lln != NULL );
     printf("}\n");
@@ -96,7 +98,13 @@ void print_trie( struct trie_node * node, char * word, int depth )
       print_trie( node->children[i], word, depth+1);
     }
   }
-}
+} //void print_trie
+
+/*
+  Main function.
+  The filename to check will be accepted as the first command line
+  parameter, otherwise a message will be displayed.
+*/
 int main(int argc, char **argv)
 {
   //file pointer
@@ -107,10 +115,10 @@ int main(int argc, char **argv)
   unsigned char * word = malloc( MAX_WORD_LENGTH );
   int word_length = 0;
 
-  int sentance_counter = 1;
-  int queue_increase_sentance_counter = 0;
+  int sentence_counter = 1;
+  int queue_increase_sentence_counter = 0;
 
-  char sentance_ending_symbols[] = {'.', '?', '!'};
+  char sentence_ending_symbols[] = {'.', '?', '!'};
   char sep[] = {' ', ',', '\n', '\r', '(', ')', '[', ']', '{', '}', ':', ';', EOF};
   char other_trim_symbols[] = {'-', '=', '\'', '\"'};
 
@@ -120,7 +128,7 @@ int main(int argc, char **argv)
     in a unicode space, but would still work.
   */
   char sep_map[CHARSET_SIZE];
-  char sentance_ending_map[CHARSET_SIZE];
+  char sentence_ending_map[CHARSET_SIZE];
   char all_trim_symbols_map[CHARSET_SIZE];
   
   //temporary variables
@@ -131,14 +139,15 @@ int main(int argc, char **argv)
   for(i = 0; i < CHARSET_SIZE; ++i) 
   {
     sep_map[i] = 0;
-    sentance_ending_map[i] = 0;
+    sentence_ending_map[i] = 0;
     all_trim_symbols_map[i] = 0;
   }
+  
   //now prepare the maps.
-  for(i = 0; i < sizeof( sentance_ending_symbols ); ++i )
+  for(i = 0; i < sizeof( sentence_ending_symbols ); ++i )
   {
-    sentance_ending_map[ sentance_ending_symbols[i] ] = 1;
-    all_trim_symbols_map[ sentance_ending_symbols[i] ] = 1;
+    sentence_ending_map[ sentence_ending_symbols[i] ] = 1;
+    all_trim_symbols_map[ sentence_ending_symbols[i] ] = 1;
   }
   for(i = 0; i < sizeof( sep); ++i )
   {
@@ -170,15 +179,13 @@ int main(int argc, char **argv)
     return 1;
   }
   
-
   while( c != EOF )
   {
-  //do{
     c = fgetc( ifp );
-    //Check for end of sentance.
-    if( sentance_ending_map[ c ] )
+    //Check for end of sentence.
+    if( sentence_ending_map[ c ] )
     {
-      ++queue_increase_sentance_counter;
+      ++queue_increase_sentence_counter;
     }
 
     //Check to see if we are at the end of a word.
@@ -186,7 +193,7 @@ int main(int argc, char **argv)
     {
       //Remove any undesirable trailing characters.
       //But don't remove periods from abbreviations. 
-      if( word_length > 0 && queue_increase_sentance_counter <= 1 )
+      if( word_length > 0 && queue_increase_sentence_counter <= 1 )
       {
         while( all_trim_symbols_map[ word[word_length - 1] ] )
         {
@@ -220,17 +227,18 @@ int main(int argc, char **argv)
           ct->last->next = calloc( 1, sizeof( struct ll_node ) );
           ct->last = ct->last->next;
         }
-        ct->last->sentance_number = sentance_counter;
-
-        //printf("\"%.*s\"\n", word_length, word);
+        ct->last->sentence_number = sentence_counter;
+        //printf("\"%.*s\"\n", word_length, word); //for debugging
       }//if( word_length > 0 )
-      if( queue_increase_sentance_counter == 1 )
+
+      //Increment the sentence count if needed.
+      if( queue_increase_sentence_counter == 1 )
       {
-        ++sentance_counter;
+        ++sentence_counter;
       }
       word_length = 0;
-      queue_increase_sentance_counter = 0;
-    }
+      queue_increase_sentence_counter = 0;
+    }//if( sep_map[ c ] )  [end of word]
     else
     {
       /*
@@ -258,10 +266,10 @@ int main(int argc, char **argv)
       {
         fprintf( stderr, "There is a word longer than the maximum word length.");
       }
-    }
+    }//else for if( sep_map[ c ])
   }//end of main while loop
 
   //Now print out the contents of the trie, reusing the word buffer.
   print_trie( root, word, 0 );
-  printf("Done.\n");
+  return 0;
 }
